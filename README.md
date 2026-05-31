@@ -22,11 +22,15 @@ tiny_corpus_rnn.txt
 ## 实验数据：
 tiny_corpus_rnn.txt
 ## 实验内容：
-1. 数据读取与字符编码。读取文本TEXT ，构建字符表vocab = sorted(set(TEXT))，并建立 stoi/itos 映射。将全文编码为整数序列 ids（长度 L）。构造 next-char 训练样本（固定 T=32）：输入 x = ids[i : i+T]，目标 y = ids[i+1 : i+T+1]。打印 len(TEXT)、vocab_size、以及一小段 TEXT[:200] 预览。 
-2. Embedding 层，直接使用Embedding(V, E)，推荐 E=32。输入 (B, T) ，输出 (B, T, E)。随机 batch 输入后，打印shape 
-3. 手写 MyRNNCell。参数：Wxh：(E, H)；Whh：(H, H)；bh：(H,)。前向：输入 x_t：(B, E)；输入 h_prev：(B, H)；输出 h_t：(B, H)。公式：ℎ𝑡=tanh⁡(𝑥𝑡𝑊𝑥ℎ+ℎ𝑡−1𝑊ℎℎ+𝑏ℎ) 。写 shape 断言：确保输入/输出维度完全匹配。 
-4. 时间展开（Unroll）得到隐藏状态序列。对 x_emb（(B, T, E)）逐步展开：h = zeros(B, H) 作为初始隐藏状态；for t in range(T)：h = cell(x_emb[:, t, :], h)；保存每一步 h，最终得到 H_seq：(B, T, H)。需要assert H_seq.shape == (B, T, H)。 
-5. 输出层与损失。输出层：Linear(H, V)（不做 softmax）；logits = linear(H_seq) → (B, T, V)；目标：y → (B, T)；loss：对时间维展开计算交叉熵，将 logits 从 (B,T,V) reshape 为 (B*T, V)，将 y 从 (B,T) reshape 为 (B*T,)，再用 CrossEntropyLoss 计算。 
-6. 训练循环，optimizer = Adam(model.parameters(), lr=1e-3)，需要做梯度剪裁。 
-7. 文本生成采样 ，实现 sample(seed_text, gen_len=200, temperature=1.0)。model.eval() + torch.no_grad()，用 seed_text 逐字符推进隐藏状态，从最后一步 logits 得到下一字符分布。选择策略为随机采样：multinomial(softmax(logits/temperature))，生成 200 字符文本。
+1. 数据读取与字符编码。
+   - 读取文本TEXT ，构建字符表vocab = sorted(set(TEXT))，并建立 stoi/itos 映射。
+   - 将全文编码为整数序列 ids（长度 L）。
+   - 构造 next-char 训练样本（固定 T=32）：输入 x = ids[i : i+T]，目标 y = ids[i+1 : i+T+1]。
+   - 打印 len(TEXT)、vocab_size、以及一小段 TEXT[:200] 预览。 
+3. Embedding 层，直接使用Embedding(V, E)，推荐 E=32。输入 (B, T) ，输出 (B, T, E)。随机 batch 输入后，打印shape 
+4. 手写 MyRNNCell。参数：Wxh：(E, H)；Whh：(H, H)；bh：(H,)。前向：输入 x_t：(B, E)；输入 h_prev：(B, H)；输出 h_t：(B, H)。公式：ℎ𝑡=tanh⁡(𝑥𝑡𝑊𝑥ℎ+ℎ𝑡−1𝑊ℎℎ+𝑏ℎ) 。写 shape 断言：确保输入/输出维度完全匹配。 
+5. 时间展开（Unroll）得到隐藏状态序列。对 x_emb（(B, T, E)）逐步展开：h = zeros(B, H) 作为初始隐藏状态；for t in range(T)：h = cell(x_emb[:, t, :], h)；保存每一步 h，最终得到 H_seq：(B, T, H)。需要assert H_seq.shape == (B, T, H)。 
+6. 输出层与损失。输出层：Linear(H, V)（不做 softmax）；logits = linear(H_seq) → (B, T, V)；目标：y → (B, T)；loss：对时间维展开计算交叉熵，将 logits 从 (B,T,V) reshape 为 (B*T, V)，将 y 从 (B,T) reshape 为 (B*T,)，再用 CrossEntropyLoss 计算。 
+7. 训练循环，optimizer = Adam(model.parameters(), lr=1e-3)，需要做梯度剪裁。 
+8. 文本生成采样 ，实现 sample(seed_text, gen_len=200, temperature=1.0)。model.eval() + torch.no_grad()，用 seed_text 逐字符推进隐藏状态，从最后一步 logits 得到下一字符分布。选择策略为随机采样：multinomial(softmax(logits/temperature))，生成 200 字符文本。
 
